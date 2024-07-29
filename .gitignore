@@ -40,16 +40,44 @@ tmp
 .bsp/
 .scala-build/
 .tasty
+
+
+
+
+
+
+
+# sbt
+
 project/project/
+
 project/target/
+project/target/streams
 target/
+target/streams
+
+# eclipse
+
 build/
+
 .classpath
+
 .project
+
 .settings
+
 .worksheet
+
 bin/
+
+# intellij idea
+
 *.ipr
+
 *.iws
+
+# other?
+
 .scala_dependencies
+
 .cache-main
