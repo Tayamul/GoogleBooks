@@ -6,3 +6,7 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 # Controller showing the application's api
 GET     /api     controllers.ApplicationController.index
+POST    /api    controllers.ApplicationController.create
+GET     /api/:id    controllers.ApplicationController.read(id: String)
+PUT     /api/:id    controllers.ApplicationController.update(id: String)
+DELETE     /api/:id    controllers.ApplicationController.delete(id: String)
