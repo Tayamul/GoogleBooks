@@ -1,12 +1,16 @@
 package controllers
 
-import play.api.mvc.{BaseController, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
+
 import javax.inject._
+import scala.concurrent.Future
 
 @Singleton
 class ApplicationController @Inject()(val controllerComponents: ControllerComponents) extends BaseController {
 
-  def index() = TODO
+  def index(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    Future.successful(Ok(views.html.index()))
+  }
 
   def create = TODO
 
