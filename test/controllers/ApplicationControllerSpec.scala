@@ -4,10 +4,16 @@ import baseSpec.BaseSpecWithApplication
 import play.api.test.FakeRequest
 import play.api.http.Status
 import play.api.test.Helpers._
+import repositories.DataRepository
+
+import scala.concurrent.ExecutionContext
 
 class ApplicationControllerSpec extends BaseSpecWithApplication {
+
   val TestApplicationController = new ApplicationController(
-    component
+    component,
+    repository,
+    executionContext
   )
 
   "ApplicationController .index()" should {
