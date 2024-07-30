@@ -20,7 +20,12 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
 
   def create = TODO
 
-  def read(id: String) = TODO
+  def read(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    dataRepository.read(id).map {
+      case item => Ok { Json.toJson(item) }
+      case _ => NotFound (Json.toJson("Data not found"))
+    }
+  }
 
   def update(id: String) = TODO
 
