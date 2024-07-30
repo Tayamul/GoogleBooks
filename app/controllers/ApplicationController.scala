@@ -14,14 +14,21 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   def index(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.index().map {
       case Right(item: Seq[DataModel]) => Ok {Json.toJson(item)}
-      case Left(error) => Status(error)(Json.toJson("Unable to find any books"))
+      case Left(error) => Status(error)(Json.toJson("Unable to find any books."))
     }
   }
 
   def create: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.create(dataModel).map(_ => Created)
+        dataRepository.create(dataModel).map {createdModel =>
+          if (createdModel == dataModel)
+            Created(Json.toJson(createdModel))
+          else
+            InternalServerError("Failed to store the book information.")
+        }.recover {
+          case ex: Exception => InternalServerError(s"An error occurred while saving the book: ${ex.getMessage}")
+        }
       case JsError(_) => Future(BadRequest)
     }
   }
