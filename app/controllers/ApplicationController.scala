@@ -40,7 +40,20 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }
   }
 
-  def update(id: String) = TODO
+  def update(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    request.body.validate[DataModel] match {
+      case JsSuccess(dataModel, _) =>
+        dataRepository.update(id, dataModel).flatMap {_ =>
+          dataRepository.read(id).map { updatedDataModel =>
+            Accepted(Json.toJson(updatedDataModel))
+          }.recover {
+            case _: NoSuchElementException => NotFound(s"No book found with id: $id")
+            case ex: Exception => InternalServerError(s"An error occurred while updating the book: ${ex.getMessage}")
+          }
+      }
+      case JsError(_) => Future(BadRequest)
+    }
+  }
 
   def delete(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.delete(id).map {
