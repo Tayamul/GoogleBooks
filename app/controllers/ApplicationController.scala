@@ -29,5 +29,10 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
 
   def update(id: String) = TODO
 
-  def delete(id: String) = TODO
+  def delete(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    dataRepository.delete(id).map {
+      case item => Accepted
+      case _ => NotFound (Json.toJson("Could not find the book in the database"))
+    }
+  }
 }
