@@ -1,6 +1,7 @@
 package controllers
 
 import baseSpec.BaseSpecWithApplication
+import models.DataModel
 import play.api.test.FakeRequest
 import play.api.http.Status
 import play.api.test.Helpers._
@@ -14,6 +15,13 @@ class ApplicationControllerSpec extends BaseSpecWithApplication {
     component,
     repository,
     executionContext
+  )
+
+  private val dataModel: DataModel = DataModel(
+    "abcd",
+    "test name",
+    "test description",
+    100
   )
 
   "ApplicationController .index()" should {
