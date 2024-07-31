@@ -77,14 +77,20 @@ class ApplicationControllerSpec extends BaseSpecWithApplication {
 
   "ApplicationController .delete()" should {
 
+    beforeEach()
+
+    val request: FakeRequest[JsValue] = buildGet("/api").withBody[JsValue](Json.toJson(dataModel))
+    val createdRequest: Future[Result] = TestApplicationController.create()(request)
+
+    status(createdRequest) shouldBe Status.CREATED
+
+    val deleteRequest: Future[Result] = TestApplicationController.delete(dataModel._id)(FakeRequest())
+
+    status(deleteRequest) shouldBe Status.ACCEPTED
+
+    afterEach()
   }
 
-  "test name" should {
-    "do something" in {
-      beforeEach
-      afterEach
-    }
-  }
   override def beforeEach(): Unit = await(repository.deleteAll())
   override def afterEach(): Unit = await(repository.deleteAll())
 }
