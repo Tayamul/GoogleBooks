@@ -7,7 +7,6 @@ import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.Helpers._
-import repositories.DataRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,11 +46,29 @@ class ApplicationControllerSpec extends BaseSpecWithApplication {
       status(createdResult) shouldBe Status.CREATED
 
       afterEach()
+
     }
   }
 
   "ApplicationController .read()" should {
 
+    "find a book in the database by id" in {
+
+      beforeEach()
+
+      val request: FakeRequest[JsValue] = buildPost("/api").withBody[JsValue](Json.toJson(dataModel))
+      val createdResult: Future[Result] = TestApplicationController.create()(request)
+
+      status(createdResult) shouldBe Status.CREATED
+
+      val readResult: Future[Result] = TestApplicationController.read("abcd")(FakeRequest())
+
+      status(readResult) shouldBe Status.OK
+      contentAsJson(readResult).as[JsValue] shouldBe Json.toJson(dataModel)
+
+      afterEach()
+
+    }
   }
 
   "ApplicationController .update()" should {
