@@ -15,6 +15,8 @@ libraryDependencies ++= Seq(
 
 libraryDependencies += ws
 
+libraryDependencies += ("org.typelevel"                %% "cats-core"                 % "2.3.0")
+
 lazy val root = (project in file("."))
   .settings(
     name := "google-books"
