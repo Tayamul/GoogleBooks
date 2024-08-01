@@ -22,6 +22,12 @@ class LibraryServiceSpec extends BaseSpec with MockFactory with ScalaFutures wit
     "description" -> "The best book!!!",
     "pageCount" -> 100
   )
+  val errorGameOfThrones: JsValue = Json.obj(
+    "_id" -> "someId",
+    "name" -> "A Game of Thrones",
+    "description" -> "The best book!!!",
+    "pageCount" -> 120
+  )
 
   "getGoogleBook" should {
     val url: String = "testUrl"
@@ -34,6 +40,17 @@ class LibraryServiceSpec extends BaseSpec with MockFactory with ScalaFutures wit
 
       whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "")) { result =>
         result shouldBe gameOfThrones.as[Book]
+      }
+    }
+
+    "return an error" in {
+      (mockConnector.get[Book](_: String) (_: OFormat[Book], _: ExecutionContext))
+        .expects(url, *, *)
+        .returning(Future(gameOfThrones.as[Book]))
+        .once()
+
+      whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "")) { result =>
+        result should not be errorGameOfThrones.as[Book]
       }
     }
   }
