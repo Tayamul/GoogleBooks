@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play"   % "5.1.0"          % Test
 )
 
+libraryDependencies += ws
+
 lazy val root = (project in file("."))
   .settings(
     name := "google-books"
