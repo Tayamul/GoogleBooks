@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationControllerSpec extends BaseSpecWithApplication {
 
-  val TestApplicationController = new ApplicationController(component, repository)(executionContext)
+  val TestApplicationController = new ApplicationController(component, repository, service)(executionContext)
 
   private val dataModel: DataModel = DataModel(
     "abcd",
