@@ -1,6 +1,6 @@
 package controllers
 
-import models.DataModel
+import models.{APIError, DataModel}
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
 import repositories.DataRepository
@@ -64,9 +64,9 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   }
 
   def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
-    service.getGoogleBook(search = search, term = term).map {
-      case book => Ok{Json.toJson(book)}
-      case _ => NotFound (Json.toJson("Book not found in the database"))
+    service.getGoogleBook(search = search, term = term).value.map {
+      case Right(book) => Ok{Json.toJson(book)}
+      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
     }
   }
 }
