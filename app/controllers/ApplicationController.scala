@@ -4,12 +4,13 @@ import models.DataModel
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
 import repositories.DataRepository
+import services.LibraryService
 
 import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository)(implicit val ec: ExecutionContext) extends BaseController {
+class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService)(implicit val ec: ExecutionContext) extends BaseController {
 
   def index(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.index().map {
@@ -59,6 +60,13 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     dataRepository.delete(id).map {
       case item => Accepted
       case _ => NotFound (Json.toJson("Could not find the book in the database"))
+    }
+  }
+
+  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
+    service.getGoogleBook(search = search, term = term).map {
+      case book => Ok{Json.toJson(book)}
+      case _ => NotFound (Json.toJson("Book not found in the database"))
     }
   }
 }
