@@ -1,6 +1,7 @@
 package services
 
 import baseSpec.BaseSpec
+import cats.data.EitherT
 import connectors.LibraryConnector
 import models.Book
 import org.scalamock.scalatest.MockFactory
@@ -35,22 +36,22 @@ class LibraryServiceSpec extends BaseSpec with MockFactory with ScalaFutures wit
     "return a book" in {
       (mockConnector.get[Book](_: String)(_: OFormat[Book], _: ExecutionContext))
         .expects(url, *, *)
-        .returning(Future(gameOfThrones.as[Book]))
+        .returning(EitherT.rightT(gameOfThrones.as[Book]))
         .once()
 
-      whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "")) { result =>
-        result shouldBe gameOfThrones.as[Book]
+      whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "").value) { result =>
+        result shouldBe Right(gameOfThrones.as[Book])
       }
     }
 
     "return an error" in {
       (mockConnector.get[Book](_: String) (_: OFormat[Book], _: ExecutionContext))
         .expects(url, *, *)
-        .returning(Future(gameOfThrones.as[Book]))
+        .returning(EitherT.rightT((gameOfThrones.as[Book])))
         .once()
 
-      whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "")) { result =>
-        result should not be errorGameOfThrones.as[Book]
+      whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "").value) { result =>
+        result should not be Right(errorGameOfThrones.as[Book])
       }
     }
   }
