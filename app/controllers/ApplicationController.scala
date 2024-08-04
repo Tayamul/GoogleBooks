@@ -22,22 +22,22 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   def create: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.create(dataModel).map {createdModel =>
-          if (createdModel == dataModel)
-            Created(Json.toJson(createdModel))
-          else
-            InternalServerError("Failed to store the book information.")
+        dataRepository.create(dataModel).map {
+          case Right(book) => Created{Json.toJson(book)}
+          case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
         }.recover {
-          case ex: Exception => InternalServerError(s"An error occurred while saving the book: ${ex.getMessage}")
+          case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while saving the book: ${ex.getMessage}"))
         }
-      case JsError(_) => Future(BadRequest)
+      case JsError(_) => Future.successful(BadRequest("Invalid JSON"))
     }
   }
 
   def read(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.read(id).map {
-      case item => Ok { Json.toJson(item) }
-      case _ => NotFound (Json.toJson("Data not found"))
+      case Right(book) => Ok {Json.toJson(book)}
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while retrieving the book: ${ex.getMessage}"))
     }
   }
 
