@@ -48,7 +48,7 @@ class DataRepository @Inject()(
     )
 
   def read(id: String): Future[Either[APIError, DataModel]] =
-    collection.find(byID(id)).headOption flatMap {
+    collection.find(byID(id)).headOption.map {
       case Some(data) => Right(data)
       case None => Left(APIError.BadAPIResponse(404, s"No book found with id: $id"))
     }.recover {
