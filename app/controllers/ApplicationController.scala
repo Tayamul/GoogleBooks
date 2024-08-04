@@ -44,22 +44,29 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   def update(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.update(id, dataModel).flatMap {_ =>
-          dataRepository.read(id).map { updatedDataModel =>
-            Accepted(Json.toJson(updatedDataModel))
+        dataRepository.update(id, dataModel).flatMap {
+          case Right(_) =>
+          dataRepository.read(id).map {
+            case Right(updatedDataModel) => Accepted {Json.toJson(updatedDataModel)}
+            case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
           }.recover {
-            case _: NoSuchElementException => NotFound(s"No book found with id: $id")
-            case ex: Exception => InternalServerError(s"An error occurred while updating the book: ${ex.getMessage}")
+            case _: NoSuchElementException => NotFound(Json.obj("error" -> s"No book found with id: $id"))
+            case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while updating the book: ${ex.getMessage}"))
           }
-      }
-      case JsError(_) => Future(BadRequest)
+          case Left(error) => Future.successful(Status(error.httpResponseStatus)(Json.obj("error" -> error.reason)))
+      }.recover {
+          case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while updating the book: ${ex.getMessage}"))
+        }
+      case JsError(_) => Future.successful(BadRequest(Json.obj("error" -> "Invalid JSON")))
     }
   }
 
   def delete(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.delete(id).map {
-      case item => Accepted
-      case _ => NotFound (Json.toJson("Could not find the book in the database"))
+      case Right(_) => NoContent
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception =>InternalServerError(Json.obj("error" -> s"An error occurred while deleting the book: ${ex.getMessage}"))
     }
   }
 

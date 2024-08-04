@@ -50,24 +50,43 @@ class DataRepository @Inject()(
   def read(id: String): Future[Either[APIError, DataModel]] =
     collection.find(byID(id)).headOption flatMap {
       case Some(data) => Right(data)
-      case None => Left(APIError.BadAPIResponse(404, "Book not found in the database"))
+      case None => Left(APIError.BadAPIResponse(404, s"No book found with id: $id"))
     }.recover {
       case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
       case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
     }
 
-  def update(id: String, book: DataModel): Future[result.UpdateResult] =
+  def update(id: String, book: DataModel): Future[Either[APIError, result.UpdateResult]] =
     collection.replaceOne(
       filter = byID(id),
       replacement = book,
-      options = new ReplaceOptions().upsert(true) //What happens when we set this to false?
-    ).toFuture()
+      options = new ReplaceOptions().upsert(true) // 'true' means to insert the document if it doesn't exist
+    ).toFuture().map { updateResult =>
+      if (updateResult.getMatchedCount == 0) Left(APIError.BadAPIResponse(404, s"No book found with id: $id"))
+      else Right(updateResult)
+    }.recover {
+      case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+      case _: IllegalArgumentException => Left(APIError.BadAPIResponse(400, "Bad request."))
+      case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
+    }
 
-  def delete(id: String): Future[result.DeleteResult] =
+  def delete(id: String): Future[Either[APIError, result.DeleteResult]] =
     collection.deleteOne(
       filter = byID(id)
-    ).toFuture()
+    ).toFuture().map { deleteResult =>
+      if (deleteResult.getDeletedCount == 0) Left(APIError.BadAPIResponse(404, s"No book found with id: $id"))
+      else Right((deleteResult))
+    }.recover {
+      case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+      case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
+    }
 
-  def deleteAll(): Future[Unit] = collection.deleteMany(empty()).toFuture().map(_ => ()) //Hint: needed for tests
+  def deleteAll(): Future[Either[APIError, Unit]] = collection.deleteMany(empty()).toFuture().map {deleteResult =>
+    if (deleteResult.getDeletedCount == 0) Left(APIError.BadAPIResponse(404, "No books found to delete."))
+    else Right(())
+  }.recover {
+    case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+    case _: IllegalArgumentException => Left(APIError.BadAPIResponse(400, "Bad request."))
+    case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))} //Hint: needed for tests
 
 }
