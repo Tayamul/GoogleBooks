@@ -4,7 +4,8 @@ import models.{APIError, DataModel}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.empty
 import org.mongodb.scala.model._
-import org.mongodb.scala.result
+import org.mongodb.scala.{MongoException, result}
+import play.api.mvc.Results.Status
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
@@ -30,11 +31,16 @@ class DataRepository @Inject()(
       case _ => Left(APIError.BadAPIResponse(404, "Books cannot be found"))
     }
 
-  def create(book: DataModel): Future[DataModel] =
+  def create(book: DataModel): Future[Either[APIError, DataModel]] =
     collection
       .insertOne(book)
       .toFuture()
-      .map(_ => book)
+      .map(_ => Right(book))
+      .recover {
+        case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+        case _: IllegalArgumentException => Left(APIError.BadAPIResponse(400, "Bad request."))
+        case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
+      }
 
   private def byID(id: String): Bson =
     Filters.and(
