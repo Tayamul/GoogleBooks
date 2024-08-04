@@ -47,10 +47,13 @@ class DataRepository @Inject()(
       Filters.equal("_id", id)
     )
 
-  def read(id: String): Future[DataModel] =
+  def read(id: String): Future[Either[APIError, DataModel]] =
     collection.find(byID(id)).headOption flatMap {
-      case Some(data) =>
-        Future(data)
+      case Some(data) => Right(data)
+      case None => Left(APIError.BadAPIResponse(404, "Book not found in the database"))
+    }.recover {
+      case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+      case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
     }
 
   def update(id: String, book: DataModel): Future[result.UpdateResult] =
