@@ -5,7 +5,7 @@ GET     /                           controllers.HomeController.index()
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 # Controller showing the application's api
-GET     /api     controllers.ApplicationController.index
+GET   /api                 controllers.ApplicationController.index(name: Option[String] ?= None)
 POST    /api/create    controllers.ApplicationController.create
 GET     /api/:id    controllers.ApplicationController.read(id: String)
 PUT     /api/:id    controllers.ApplicationController.update(id: String)

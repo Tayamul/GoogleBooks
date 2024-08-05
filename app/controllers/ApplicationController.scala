@@ -12,10 +12,12 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService)(implicit val ec: ExecutionContext) extends BaseController {
 
-  def index(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.index().map {
-      case Right(item: Seq[DataModel]) => Ok {Json.toJson(item)}
-      case Left(error) => Status(error.upstreamStatus)
+  def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    dataRepository.index(name).map {
+      case Right(items) => Ok {Json.toJson(items)}
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred: ${ex.getMessage}"))
     }
   }
 

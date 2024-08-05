@@ -25,11 +25,23 @@ class DataRepository @Inject()(
   replaceIndexes = false
 ) {
 
-  def index(): Future[Either[APIError.BadAPIResponse, Seq[DataModel]]]  =
-    collection.find().toFuture().map{
-      case books: Seq[DataModel] => Right(books)
-      case _ => Left(APIError.BadAPIResponse(404, "Books cannot be found"))
+  def index(name: Option[String]): Future[Either[APIError.BadAPIResponse, Seq[DataModel]]]  = {
+    val filter = name.map(n => Filters.eq("name", n)).getOrElse(Filters.exists("name"))
+    collection.find(filter).toFuture().map { books =>
+      if (books.nonEmpty) Right(books)
+      else {
+        val errorMessage = name match {
+          case Some(_) => "No books found for the specified name."
+          case None => "No books found."
+        }
+        Left(APIError.BadAPIResponse(404, errorMessage))
+      }
+    }.recover {
+      case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+      case _: IllegalArgumentException => Left(APIError.BadAPIResponse(400, "Bad request."))
+      case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
     }
+  }
 
   def create(book: DataModel): Future[Either[APIError, DataModel]] =
     collection
