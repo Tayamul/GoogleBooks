@@ -1,6 +1,6 @@
 package controllers
 
-import models.{APIError, DataModel}
+import models.DataModel
 import services.RepositoryService
 import play.api.libs.json._
 import play.api.mvc._
@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController {
 
   def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.index(name).map {
+    repoService.getBooks(name).map {
       case Right(items) => Ok {Json.toJson(items)}
       case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
     }.recover {
@@ -25,7 +25,7 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   def create: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.create(dataModel).map {
+        repoService.createBook(dataModel).map {
           case Right(book) => Created{Json.toJson(book)}
           case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
         }.recover {
@@ -36,7 +36,7 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   }
 
   def read(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.read(id).map {
+    repoService.getBookById(id).map {
       case Right(book) => Ok {Json.toJson(book)}
       case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
     }.recover {
@@ -47,9 +47,9 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   def update(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.update(id, dataModel).flatMap {
+        repoService.updateBookById(id, dataModel).flatMap {
           case Right(_) =>
-          dataRepository.read(id).map {
+          repoService.getBookById(id).map {
             case Right(updatedDataModel) => Accepted {Json.toJson(updatedDataModel)}
             case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
           }.recover {
@@ -77,7 +77,7 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
       val fieldName = fieldNameResult.get
       val newValue = newValueResult.get
 
-      dataRepository.updateField(id, fieldName, newValue).map {
+      repoService.updateBookByFieldName(id, fieldName, newValue).map {
         case Right(_) => NoContent
         case Left(error) => Status(error.httpResponseStatus)(error.reason)
       }
@@ -87,7 +87,7 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
   }
 
   def delete(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.delete(id).map {
+    repoService.deleteBookById(id).map {
       case Right(_) => NoContent
       case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
     }.recover {
