@@ -1,8 +1,10 @@
 package controllers
 
 import models.{APIError, DataModel}
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
+//import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json._
+//import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
+import play.api.mvc._
 import repositories.DataRepository
 import services.LibraryService
 
@@ -60,6 +62,28 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
           case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while updating the book: ${ex.getMessage}"))
         }
       case JsError(_) => Future.successful(BadRequest(Json.obj("error" -> "Invalid JSON")))
+    }
+  }
+
+  def updateField(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val json = request.body
+
+    val fieldNamePath = __ \ "fieldName"
+    val newValuePath = __ \ "newValue"
+
+    val fieldNameResult = json.validate[String](fieldNamePath.read[String])
+    val newValueResult = json.validate[String](newValuePath.read[String])
+
+    if (fieldNameResult.isSuccess && newValueResult.isSuccess) {
+      val fieldName = fieldNameResult.get
+      val newValue = newValueResult.get
+
+      dataRepository.updateField(id, fieldName, newValue).map {
+        case Right(_) => NoContent
+        case Left(error) => Status(error.httpResponseStatus)(error.reason)
+      }
+    } else {
+      Future.successful(BadRequest("Invalid request format. Expected 'fieldName' and 'newValue' fields."))
     }
   }
 

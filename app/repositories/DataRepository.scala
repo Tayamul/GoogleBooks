@@ -82,6 +82,19 @@ class DataRepository @Inject()(
       case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
     }
 
+def updateField(id: String, fieldName: String, newValue: String): Future[Either[APIError, result.UpdateResult]] = {
+  val filter = byID(id)
+  val update = Updates.set(fieldName, newValue)
+  collection.updateOne(filter, update).toFuture().map { updateResult =>
+    if (updateResult.getMatchedCount == 0) Left(APIError.BadAPIResponse(404, s"No book found with id: $id"))
+    else Right(updateResult)
+  }.recover {
+    case _: MongoException => Left(APIError.BadAPIResponse(500, "Could not connect to the database."))
+    case _: IllegalArgumentException => Left(APIError.BadAPIResponse(400, "Bad request."))
+    case _ => Left(APIError.BadAPIResponse(500, "An unknown error occurred."))
+  }
+}
+
   def delete(id: String): Future[Either[APIError, result.DeleteResult]] =
     collection.deleteOne(
       filter = byID(id)
