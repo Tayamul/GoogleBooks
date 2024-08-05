@@ -3,7 +3,7 @@ package services
 import baseSpec.BaseSpec
 import cats.data.EitherT
 import connectors.LibraryConnector
-import models.Book
+import models.{APIError, Book}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -23,12 +23,6 @@ class LibraryServiceSpec extends BaseSpec with MockFactory with ScalaFutures wit
     "description" -> "The best book!!!",
     "pageCount" -> 100
   )
-  val errorGameOfThrones: JsValue = Json.obj(
-    "_id" -> "someId",
-    "name" -> "A Game of Thrones",
-    "description" -> "The best book!!!",
-    "pageCount" -> 120
-  )
 
   "getGoogleBook" should {
     val url: String = "testUrl"
@@ -47,11 +41,11 @@ class LibraryServiceSpec extends BaseSpec with MockFactory with ScalaFutures wit
     "return an error" in {
       (mockConnector.get[Book](_: String) (_: OFormat[Book], _: ExecutionContext))
         .expects(url, *, *)
-        .returning(EitherT.rightT((gameOfThrones.as[Book])))
+        .returning(EitherT.leftT(APIError.BadAPIResponse(500, "Could not connect")))
         .once()
 
       whenReady(testService.getGoogleBook(urlOverride = Some(url), search = "", term = "").value) { result =>
-        result should not be Right(errorGameOfThrones.as[Book])
+        result shouldBe Left(APIError.BadAPIResponse(500, "Could not connect"))
       }
     }
   }
