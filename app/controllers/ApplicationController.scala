@@ -1,9 +1,8 @@
 package controllers
 
 import models.{APIError, DataModel}
-//import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import services.RepositoryService
 import play.api.libs.json._
-//import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
 import play.api.mvc._
 import repositories.DataRepository
 import services.LibraryService
@@ -12,7 +11,7 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService)(implicit val ec: ExecutionContext) extends BaseController {
+class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController {
 
   def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     dataRepository.index(name).map {
