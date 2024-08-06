@@ -2,7 +2,12 @@ package models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class DataModel(_id: String, name: String, description: String, pageCount: Int)
+case class DataModel(
+                      _id: String,
+                     name: String,
+                     description: Option[String],
+                     pageCount: Option[Int]
+                    )
 
 object DataModel {
   // this allows for easily transforming the model to and from JSON

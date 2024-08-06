@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationControllerSpec extends BaseSpecWithApplication {
 
-  val TestApplicationController = new ApplicationController(component, repository, service)(executionContext)
+  val TestApplicationController = new ApplicationController(component, repository, service, repoService)(executionContext)
 
   private val dataModel: DataModel = DataModel(
     "abcd",
@@ -32,11 +32,24 @@ class ApplicationControllerSpec extends BaseSpecWithApplication {
 
   "ApplicationController .index()" should {
 
-    val result = TestApplicationController.index()(FakeRequest())
+    "retrieve a collection of all books in the database" in {
 
-    "return TODO" in {
+      beforeEach()
+
+
+      val request: FakeRequest[JsValue] = buildPost("/api").withBody[JsValue](Json.toJson(dataModel))
+      val createdResult: Future[Result] = TestApplicationController.create()(request)
+
+      status(createdResult) shouldBe Status.CREATED
+
+      val result = TestApplicationController.index()(FakeRequest())
       status(result) shouldBe Status.OK
+
+      afterEach()
+
     }
+
+
   }
 
   "ApplicationController .create()" should {
@@ -111,7 +124,7 @@ class ApplicationControllerSpec extends BaseSpecWithApplication {
 
     val deleteRequest: Future[Result] = TestApplicationController.delete(dataModel._id)(FakeRequest())
 
-    status(deleteRequest) shouldBe Status.ACCEPTED
+    status(deleteRequest) shouldBe Status.NO_CONTENT
 
     afterEach()
 

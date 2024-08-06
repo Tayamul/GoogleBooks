@@ -1,8 +1,9 @@
 package controllers
 
 import models.DataModel
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents, Request}
+import services.RepositoryService
+import play.api.libs.json._
+import play.api.mvc._
 import repositories.DataRepository
 import services.LibraryService
 
@@ -10,63 +11,108 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService)(implicit val ec: ExecutionContext) extends BaseController {
+class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController {
 
-  def index(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.index().map {
-      case Right(item: Seq[DataModel]) => Ok {Json.toJson(item)}
-      case Left(error) => Status(error)(Json.toJson("Unable to find any books."))
+  def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
+    repoService.getBooks(name).map {
+      case Right(items) => Ok {Json.toJson(items)}
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred: ${ex.getMessage}"))
     }
   }
 
   def create: Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.create(dataModel).map {createdModel =>
-          if (createdModel == dataModel)
-            Created(Json.toJson(createdModel))
-          else
-            InternalServerError("Failed to store the book information.")
+        repoService.createBook(dataModel).map {
+          case Right(book) => Created{Json.toJson(book)}
+          case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
         }.recover {
-          case ex: Exception => InternalServerError(s"An error occurred while saving the book: ${ex.getMessage}")
+          case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while saving the book: ${ex.getMessage}"))
         }
-      case JsError(_) => Future(BadRequest)
+      case JsError(_) => Future.successful(BadRequest("Invalid JSON"))
     }
   }
 
   def read(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.read(id).map {
-      case item => Ok { Json.toJson(item) }
-      case _ => NotFound (Json.toJson("Data not found"))
+    repoService.getBookById(id).map {
+      case Right(book) => Ok {Json.toJson(book)}
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while retrieving the book: ${ex.getMessage}"))
     }
   }
 
   def update(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[DataModel] match {
       case JsSuccess(dataModel, _) =>
-        dataRepository.update(id, dataModel).flatMap {_ =>
-          dataRepository.read(id).map { updatedDataModel =>
-            Accepted(Json.toJson(updatedDataModel))
+        repoService.updateBookById(id, dataModel).flatMap {
+          case Right(_) =>
+          repoService.getBookById(id).map {
+            case Right(updatedDataModel) => Accepted {Json.toJson(updatedDataModel)}
+            case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
           }.recover {
-            case _: NoSuchElementException => NotFound(s"No book found with id: $id")
-            case ex: Exception => InternalServerError(s"An error occurred while updating the book: ${ex.getMessage}")
+            case _: NoSuchElementException => NotFound(Json.obj("error" -> s"No book found with id: $id"))
+            case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while updating the book: ${ex.getMessage}"))
           }
+          case Left(error) => Future.successful(Status(error.httpResponseStatus)(Json.obj("error" -> error.reason)))
+      }.recover {
+          case ex: Exception => InternalServerError(Json.obj("error" -> s"An error occurred while updating the book: ${ex.getMessage}"))
+        }
+      case JsError(_) => Future.successful(BadRequest(Json.obj("error" -> "Invalid JSON")))
+    }
+  }
+
+  def updateField(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    val json = request.body
+
+    val fieldNamePath = __ \ "fieldName"
+    val newValuePath = __ \ "newValue"
+
+    val fieldNameResult = json.validate[String](fieldNamePath.read[String])
+    val newValueResult = json.validate[String](newValuePath.read[String])
+
+    if (fieldNameResult.isSuccess && newValueResult.isSuccess) {
+      val fieldName = fieldNameResult.get
+      val newValue = newValueResult.get
+
+      repoService.updateBookByFieldName(id, fieldName, newValue).map {
+        case Right(_) => NoContent
+        case Left(error) => Status(error.httpResponseStatus)(error.reason)
       }
-      case JsError(_) => Future(BadRequest)
+    } else {
+      Future.successful(BadRequest("Invalid request format. Expected 'fieldName' and 'newValue' fields."))
     }
   }
 
   def delete(id: String): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    dataRepository.delete(id).map {
-      case item => Accepted
-      case _ => NotFound (Json.toJson("Could not find the book in the database"))
+    repoService.deleteBookById(id).map {
+      case Right(_) => NoContent
+      case Left(error) => Status(error.httpResponseStatus)(Json.obj("error" -> error.reason))
+    }.recover {
+      case ex: Exception =>InternalServerError(Json.obj("error" -> s"An error occurred while deleting the book: ${ex.getMessage}"))
     }
   }
 
-  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
-    service.getGoogleBook(search = search, term = term).map {
-      case book => Ok{Json.toJson(book)}
-      case _ => NotFound (Json.toJson("Book not found in the database"))
+//  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
+//    service.getGoogleBook(search = search, term = term).value.map {
+//      case Right(book) => Ok{Json.toJson(book)}
+//      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+//    }
+//  }
+
+  def getGoogleBookByIsbn(isbn: String): Action[AnyContent] = Action.async { implicit request =>
+    service.getGoogleBookByIsbn(isbn).value.flatMap {
+      case Right(book) =>
+        service.storeBookToMongoDb(book).map {
+          case Right(storedBook) => Ok(Json.toJson(storedBook))
+          case Left(error) => Status(error.httpResponseStatus)(error.reason)
+        }
+      case Left(error) => Future.successful(InternalServerError(Json.toJson(s"Error: $error")))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.toJson(s"Error: ${ex.getMessage}"))
     }
   }
+
 }
