@@ -13,4 +13,5 @@ PATCH   /api/:id   controllers.ApplicationController.updateField(id: String)
 DELETE     /api/:id    controllers.ApplicationController.delete(id: String)
 
 # Call on Google Books API
-GET     /library/google/:search/:term       controllers.ApplicationController.getGoogleBook(search: String, term: String)
+
+GET     /library/google/isbn/:isbn       controllers.ApplicationController.getGoogleBookByIsbn(isbn: String)
