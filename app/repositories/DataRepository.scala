@@ -1,5 +1,6 @@
 package repositories
 
+import com.google.inject.ImplementedBy
 import models.{APIError, DataModel}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters.empty
@@ -12,6 +13,25 @@ import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+@ImplementedBy(classOf[DataRepository])
+trait MockDataRepository {
+
+  def index(name: Option[String]): Future[Either[APIError.BadAPIResponse, Seq[DataModel]]]
+
+  def create(book: DataModel): Future[Either[APIError, DataModel]]
+
+  def read(id: String): Future[Either[APIError, DataModel]]
+
+  def update(id: String, book: DataModel): Future[Either[APIError, result.UpdateResult]]
+
+  def updateField(id: String, fieldName: String, newValue: String): Future[Either[APIError, result.UpdateResult]]
+
+  def delete(id: String): Future[Either[APIError, result.DeleteResult]]
+
+  def deleteAll(): Future[Either[APIError, Unit]]
+
+}
+
 @Singleton
 class DataRepository @Inject()(
                                 mongoComponent: MongoComponent
@@ -23,7 +43,7 @@ class DataRepository @Inject()(
     Indexes.ascending("_id")
   )),
   replaceIndexes = false
-) {
+) with MockDataRepository {
 
   def index(name: Option[String]): Future[Either[APIError.BadAPIResponse, Seq[DataModel]]]  = {
     val filter = name.map(n => Filters.eq("name", n)).getOrElse(Filters.exists("name"))
