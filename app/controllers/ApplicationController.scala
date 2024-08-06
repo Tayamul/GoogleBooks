@@ -95,10 +95,24 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }
   }
 
-  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
-    service.getGoogleBook(search = search, term = term).value.map {
-      case Right(book) => Ok{Json.toJson(book)}
-      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+//  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
+//    service.getGoogleBook(search = search, term = term).value.map {
+//      case Right(book) => Ok{Json.toJson(book)}
+//      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+//    }
+//  }
+
+  def getGoogleBookByIsbn(isbn: String): Action[AnyContent] = Action.async { implicit request =>
+    service.getGoogleBookByIsbn(isbn).value.flatMap {
+      case Right(book) =>
+        service.storeBookToMongoDb(book).map {
+          case Right(storedBook) => Ok(Json.toJson(storedBook))
+          case Left(error) => Status(error.httpResponseStatus)(error.reason)
+        }
+      case Left(error) => Future.successful(InternalServerError(Json.toJson(s"Error: $error")))
+    }.recover {
+      case ex: Exception => InternalServerError(Json.toJson(s"Error: ${ex.getMessage}"))
     }
   }
+
 }
