@@ -11,30 +11,28 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class LibraryConnector @Inject()(ws: WSClient){
 
-//  def get[Book](url: String)(implicit rds: OFormat[Book], ec: ExecutionContext): EitherT[Future, APIError, Book] = {
-//    val request = ws.url(url)
-//    val response = request.get()
-//    EitherT {
-//      response
-//        .map {
-//          result =>
-//            if (result.status == 200) {
-//              println("---------------result-----------", result)
-//              val json = result.json
-//              println("---------------json-----------", json)
-//
-//              json.validate[Book] match {
-//                case JsSuccess(parsedResponse, _) => Right(parsedResponse)
-//                case JsError(errors) => Left(APIError.BadAPIResponse(500, s"Error parsing JSON response. Message: ${errors}"))
-//              }
-//            } else {
-//              Left(APIError.BadAPIResponse(result.status, result.statusText))
-//            }
-//        }.recover { case _: WSResponse =>
-//          Left(APIError.BadAPIResponse(500, "Could not connect"))
-//        }
-//    }
-//  }
+  def get[Book](url: String)(implicit rds: OFormat[Book], ec: ExecutionContext): EitherT[Future, APIError, Book] = {
+    val request = ws.url(url)
+    val response = request.get()
+    EitherT {
+      response
+        .map {
+          result =>
+            if (result.status == 200) {
+              val json = result.json
+
+              json.validate[Book] match {
+                case JsSuccess(parsedResponse, _) => Right(parsedResponse)
+                case JsError(errors) => Left(APIError.BadAPIResponse(500, s"Error parsing JSON response. Message: ${errors}"))
+              }
+            } else {
+              Left(APIError.BadAPIResponse(result.status, result.statusText))
+            }
+        }.recover { case _: WSResponse =>
+          Left(APIError.BadAPIResponse(500, "Could not connect"))
+        }
+    }
+  }
 
   def getBookByIsbn(isbn: String)(implicit ec: ExecutionContext): EitherT[Future, APIError, DataModel] = {
     val url = s"https://www.googleapis.com/books/v1/volumes?q=isbn:$isbn"

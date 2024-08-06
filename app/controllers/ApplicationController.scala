@@ -95,12 +95,12 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }
   }
 
-//  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
-//    service.getGoogleBook(search = search, term = term).value.map {
-//      case Right(book) => Ok{Json.toJson(book)}
-//      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
-//    }
-//  }
+  def getGoogleBook(search: String, term: String): Action[AnyContent] = Action.async { implicit request =>
+    service.getGoogleBook(search = search, term = term).value.map {
+      case Right(book) => Ok{Json.toJson(book)}
+      case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+    }
+  }
 
   def getGoogleBookByIsbn(isbn: String): Action[AnyContent] = Action.async { implicit request =>
     service.getGoogleBookByIsbn(isbn).value.flatMap {
