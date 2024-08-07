@@ -3,13 +3,18 @@
 @(book: DataModel)
 
 @main("Find Book"){
+
+<div class ="container">
     <h1>Google Book Api Project</h1>
 
-    <div>
-        <h2>@book.name</h2>
-        <p>Description: @book.description</p>
-        <p>Page Count: @book.pageCount</p>
+    <div class = "book-card">
+        <div class="book-details">
+            <h2 class="book-title">@book.name</h2>
+            <p class="book-description">Description: @book.description</p>
+            <p class="book-page-count">Page Count: @book.pageCount</p>
+        </div>
     </div>
+</div>
 }
 
 
