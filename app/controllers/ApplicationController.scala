@@ -11,7 +11,7 @@ import javax.inject._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController {
+class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController with play.api.i18n.I18nSupport {
 
   def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     repoService.getBooks(name).map {
@@ -122,6 +122,10 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }.recover {
       case ex: Exception => InternalServerError(s"Error: ${ex.getMessage}")
     }
+  }
+
+  def addBook(): Action[AnyContent] = Action { implicit request =>
+    Ok(views.html.addABook(DataModel.dataForm))
   }
 
 }
