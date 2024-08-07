@@ -17,3 +17,7 @@ GET     /library/google/isbn/:isbn       controllers.ApplicationController.getGo
 
 # Testing endpoints for rendering HTML files in the browser
 GET     /example/:isbn    controllers.ApplicationController.example(isbn: String)
+
+# Adding a new book to the database form
+GET     /addbook/form   controllers.ApplicationController.addBook()
+POST     /addbook/form   controllers.ApplicationController.addBookForm()
