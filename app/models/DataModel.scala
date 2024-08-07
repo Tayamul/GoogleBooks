@@ -8,8 +8,8 @@ import play.api.data.Forms._
 case class DataModel(
                       _id: String,
                      name: String,
-                     description: String,
-                     pageCount: Int
+                     description: Option[String],
+                     pageCount: Option[Int]
                     )
 
 object DataModel {
@@ -20,8 +20,8 @@ object DataModel {
     mapping(
       "_id" -> text,
       "name" -> text,
-      "description" -> text,
-      "pageCount" -> number
+      "description" -> optional(text),
+      "pageCount" -> optional(number)
     )(DataModel.apply)(DataModel.unapply)
   )
 
