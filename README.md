@@ -1,27 +1,56 @@
 # Scala Play RESTful API
 
-`Enter a brief description here`
+This project is a RESTful API built with Scala and the Play Framework. It provides endpoints to interact with Google Books API, handle book data, and store it in MongoDB. The API supports operations for retrieving, adding, and updating book records.
 
 ## Running the project
 
-`Enter instructions on how to run your application here`
+**Clone the Repository:**
+   ```sh
+   git clone https://github.com/Tayamul/GoogleBooks.git
+   cd GoogleBooks
+   ```
+**Setup Environment:**
+
+`Ensure you have Java JDK 8+ installed.`
+
+`Install SBT (Scala Build Tool).`
+
+**Configuration:**
+
+`Update application.conf with your MongoDB connection details and any other required configurations.`
+
+**Run the Application:**
+
+```sh
+sbt run
+```
+
+**Access the Application:**
+
+`Open a browser and navigate to http://localhost:9000 to view the API and interact with it.`
 
 ## Technologies
 
-* `Enter a list of technologies used within the project`
+- **Play Framework** - A reactive web application framework for Java and Scala.
+- **Scala** - A powerful language that combines object-oriented and functional programming.
+- **MongoDB** - A NoSQL database used for storing book records.
+- **Google Books API** - Used for fetching book data.
 
 ## Languages
 
-`Add information about languages used`
+- **Scala** - Primary language used for development.
+- **HTML/CSS** - For creating and styling web forms and views.
 
 ## Features
 
-* `Details of main features`
-* `Details of any special features`
+- **Google Books Integration**: Retrieve book details using ISBN from Google Books API.
+- **MongoDB Integration**: Store and manage book records using MongoDB
+- **Form Handling**: Add and update book records through HTML forms.
+- **Error Handling**: Comprehensive error handling and user feedback.
 
 ## Tests
 
-`Add information about the testing framwork`
+- **Testing Framework**: The project uses ScalaTest for unit and integration testing. Ensure tests are run to verify application functionality.
 
 ---
 
