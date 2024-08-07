@@ -14,3 +14,6 @@ DELETE     /api/:id    controllers.ApplicationController.delete(id: String)
 
 # Call on Google Books API
 GET     /library/google/isbn/:isbn       controllers.ApplicationController.getGoogleBookByIsbn(isbn: String)
+
+# Testing endpoints for rendering HTML files in the browser
+GET     /example/:isbn    controllers.ApplicationController.example(isbn: String)

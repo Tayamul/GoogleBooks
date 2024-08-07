@@ -1,6 +1,6 @@
 package controllers
 
-import models.DataModel
+import models.{APIError, DataModel}
 import services.RepositoryService
 import play.api.libs.json._
 import play.api.mvc._
@@ -113,6 +113,16 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }.recover {
       case ex: Exception => InternalServerError(Json.toJson(s"Error: ${ex.getMessage}"))
     }
+  }
+
+  def example(id: String): Action[AnyContent] = Action.async { implicit result =>
+    repoService.getBookById(id).map {
+      case Right(book) => Ok(views.html.example(book))
+      case Left(error) => NotFound("Book not found.")
+    }.recover {
+      case ex: Exception => InternalServerError(s"Error: ${ex.getMessage}")
+    }
+//   Future.successful(Ok(views.html.example(dataModel)))
   }
 
 }
