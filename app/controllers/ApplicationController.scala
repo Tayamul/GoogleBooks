@@ -1,17 +1,20 @@
 package controllers
 
-import models.DataModel
+import models.DataModel.dataForm
+import models.{APIError, DataModel}
 import services.RepositoryService
 import play.api.libs.json._
 import play.api.mvc._
+import play.filters.csrf.CSRF
 import repositories.DataRepository
 import services.LibraryService
 
 import javax.inject._
+import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController {
+class ApplicationController @Inject()(val controllerComponents: ControllerComponents, val dataRepository: DataRepository, val service: LibraryService, val repoService: RepositoryService)(implicit val ec: ExecutionContext) extends BaseController with play.api.i18n.I18nSupport {
 
   def index(name: Option[String] = None): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
     repoService.getBooks(name).map {
@@ -113,6 +116,41 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }.recover {
       case ex: Exception => InternalServerError(Json.toJson(s"Error: ${ex.getMessage}"))
     }
+  }
+
+  def example(id: String): Action[AnyContent] = Action.async { implicit result =>
+    repoService.getBookById(id).map {
+      case Right(book) => Ok(views.html.example(book))
+      case Left(error) => NotFound("Book not found.")
+    }.recover {
+      case ex: Exception => InternalServerError(s"Error: ${ex.getMessage}")
+    }
+  }
+
+  def addBook(): Action[AnyContent] = Action { implicit request =>
+    Ok(views.html.addABook(DataModel.dataForm))
+  }
+
+  def accessToken(implicit request: Request[_]) = {
+    CSRF.getToken
+  }
+
+  def addBookForm(): Action[AnyContent] = Action.async { implicit request =>
+    accessToken
+    dataForm.bindFromRequest().fold(
+      formWithErrors => {
+        Future.successful(BadRequest(views.html.addABook(formWithErrors)))
+      },
+      formData => {
+        dataRepository.create(formData).map {
+          case Right(_) => {
+            Thread sleep(4000)
+            Redirect(routes.ApplicationController.example(formData._id)).flashing("success" -> "Book added successfully")
+          }
+          case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+        }
+      }
+    )
   }
 
 }

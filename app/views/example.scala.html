@@ -1,0 +1,31 @@
+@import models.DataModel
+
+@(book: DataModel)
+
+@main("Find Book"){
+
+<div class ="container">
+    <h1>Google Book Api Project</h1>
+
+    <div class = "book-card">
+        <div class="book-details">
+            <h2 class="book-title">@book.name</h2>
+            <p class="book-description">Description: @book.description</p>
+            <p class="book-page-count">Page Count: @book.pageCount</p>
+        </div>
+    </div>
+</div>
+}
+
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Title</title>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--</body>-->
+<!--</html>-->
