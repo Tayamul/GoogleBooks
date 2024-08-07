@@ -1,13 +1,16 @@
 package controllers
 
+import models.DataModel.dataForm
 import models.{APIError, DataModel}
 import services.RepositoryService
 import play.api.libs.json._
 import play.api.mvc._
+import play.filters.csrf.CSRF
 import repositories.DataRepository
 import services.LibraryService
 
 import javax.inject._
+import scala.concurrent.impl.Promise
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -126,6 +129,28 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
 
   def addBook(): Action[AnyContent] = Action { implicit request =>
     Ok(views.html.addABook(DataModel.dataForm))
+  }
+
+  def accessToken(implicit request: Request[_]) = {
+    CSRF.getToken
+  }
+
+  def addBookForm(): Action[AnyContent] = Action.async { implicit request =>
+    accessToken
+    dataForm.bindFromRequest().fold(
+      formWithErrors => {
+        Future.successful(BadRequest(views.html.addABook(formWithErrors)))
+      },
+      formData => {
+        dataRepository.create(formData).map {
+          case Right(_) => {
+            Thread sleep(4000)
+            Redirect(routes.ApplicationController.example(formData._id)).flashing("success" -> "Book added successfully")
+          }
+          case Left(error) => InternalServerError(Json.toJson(s"Error: $error"))
+        }
+      }
+    )
   }
 
 }
