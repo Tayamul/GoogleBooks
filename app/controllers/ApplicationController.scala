@@ -122,7 +122,6 @@ class ApplicationController @Inject()(val controllerComponents: ControllerCompon
     }.recover {
       case ex: Exception => InternalServerError(s"Error: ${ex.getMessage}")
     }
-//   Future.successful(Ok(views.html.example(dataModel)))
   }
 
 }
